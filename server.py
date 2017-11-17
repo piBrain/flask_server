@@ -26,8 +26,8 @@ def most_common(L):
 
 @app.route("/predict", methods=['POST'])
 def handle_prediction():
-    sentence = request.form['sentence']
-    client = PredictClient('1.tcp.ngrok.io:20259', 'default', 1510811069)
+    sentence = request.form['sentence'].lower()
+    client = PredictClient('localhost:8000', 'default', 1510811069)
     sentence = tf.constant(sentence.split(' '))
     index_lookup_table = tf.contrib.lookup.index_table_from_file(
         vocabulary_file='./vocab_list.txt',
@@ -40,12 +40,16 @@ def handle_prediction():
     print(ids)
     request_data = { 'input': np.array([ids]), 'input_sz': np.array([len(ids)]) }
     proto = client.predict(request_data)
-    predictions = tf.contrib.util.make_ndarray(proto)
-    api_requests = []
-    for pred in predictions:
-       api_request = []
-       for x in pred:
-           api_requests.append(most_common(x).decode('utf-8'))
-    print(api_requests)
-    return jsonify(api_requests)
+    print(proto)
+    if proto:
+        predictions = tf.contrib.util.make_ndarray(proto)
+        api_requests = []
+        for pred in predictions:
+           api_request = []
+           for x in pred:
+               api_requests.append(most_common(x).decode('utf-8'))
+        print(api_requests)
+        return jsonify(api_requests)
+    else:
+        return jsonify("Hmm, sorry I'm still learning how to speak that api, can you try it again later?")
 
